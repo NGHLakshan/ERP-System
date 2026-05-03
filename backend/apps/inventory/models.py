@@ -1,6 +1,8 @@
 from django.db import models
+from apps.core.models import Company
 
 class Product(models.Model):
+    company = models.ForeignKey(Company, on_delete=models.CASCADE, related_name='products', null=True, blank=True)
     name = models.CharField(max_length=200)
     description = models.TextField(blank=True)
     price = models.DecimalField(max_digits=10, decimal_places=2)

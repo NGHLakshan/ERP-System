@@ -112,6 +112,8 @@ export const getAuditLogs = (params = {}) => {
     return api.get(`core/logs/${query.toString() ? '?' + query.toString() : ''}`);
 };
 
+export const globalSearch = (query) => api.get(`core/search/?q=${query}`);
+
 // --- Notifications ---
 export const getNotifications = () => api.get('notifications/');
 export const markNotificationAsRead = (id) => api.post(`notifications/${id}/mark_as_read/`);

@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { getSalesOrder, confirmSalesOrder, cancelSalesOrder } from '../api/api';
+import ExportButton from '../components/ExportButton';
 
 const STATUS_COLOR = {
     draft:      { bg: 'rgba(245,158,11,0.15)',  text: '#f59e0b' },
@@ -56,6 +57,17 @@ const SalesOrderDetails = () => {
     const sc = STATUS_COLOR[order.status] || {};
     const total = parseFloat(order.total_amount || 0);
 
+    // Prepare data for export
+    const exportData = order.items.map((item, idx) => ({
+        id: idx + 1,
+        product: item.product_details?.name || `Product #${item.product}`,
+        qty: item.quantity,
+        price: `Rs. ${parseFloat(item.price).toFixed(2)}`,
+        subtotal: `Rs. ${parseFloat(item.subtotal).toFixed(2)}`
+    }));
+
+    const exportHeaders = ["#", "Product", "Qty", "Unit Price", "Subtotal"];
+
     return (
         <div>
             {/* Top bar (screen only) */}
@@ -66,7 +78,7 @@ const SalesOrderDetails = () => {
                     </button>
                     <h1 className="app-title">Order SO-{order.id}</h1>
                 </div>
-                <div style={{ display: 'flex', gap: '8px' }}>
+                <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
                     {order.status === 'draft' && (
                         <Link to={`/sales/${id}/edit`} className="btn btn-secondary" style={{ padding: '8px 16px' }}>
                             ✏️ Edit
@@ -82,12 +94,18 @@ const SalesOrderDetails = () => {
                             ✕ Cancel
                         </button>
                     )}
+                    <ExportButton 
+                        data={exportData}
+                        headers={exportHeaders}
+                        title={`Sales Invoice: SO-${order.id}`}
+                        filename={`Invoice_SO_${order.id}`}
+                    />
                     <button
                         className="btn btn-secondary"
                         style={{ padding: '8px 16px' }}
                         onClick={() => window.print()}
                     >
-                        🖨️ Print Invoice
+                        🖨️ Print
                     </button>
                 </div>
             </div>

@@ -5,6 +5,7 @@ import {
 } from 'recharts';
 import { FileText, Download, Filter, Package, TrendingUp, ShoppingBag, PieChart as PieIcon } from 'lucide-react';
 import { getSalesReport, getInventoryReport, getFinanceAnalytics } from '../api/api';
+import ExportButton from '../components/ExportButton';
 
 const COLORS = ['#6366f1', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#06b6d4'];
 
@@ -39,6 +40,49 @@ export default function Reports() {
     const formatCurrency = (val) =>
         new Intl.NumberFormat('en-LK', { style: 'currency', currency: 'LKR', maximumFractionDigits: 0 }).format(val);
 
+    const getExportProps = () => {
+        switch (activeTab) {
+            case 'inventory':
+                return {
+                    data: inventoryData?.low_stock_items.map(item => ({
+                        product: item.product__name,
+                        warehouse: item.warehouse__name,
+                        qty: item.quantity,
+                        status: 'CRITICAL'
+                    })) || [],
+                    headers: ["Product", "Warehouse", "Quantity", "Status"],
+                    title: "Inventory Report - Low Stock Alerts",
+                    filename: "Inventory_Report"
+                };
+            case 'sales':
+                return {
+                    data: salesData?.top_products.map(item => ({
+                        product: item.product__name,
+                        revenue: formatCurrency(item.total_revenue),
+                        qty: item.total_qty
+                    })) || [],
+                    headers: ["Product", "Revenue", "Quantity Sold"],
+                    title: "Sales Report - Product Performance",
+                    filename: "Sales_Report"
+                };
+            case 'finance':
+                return {
+                    data: financeData?.monthly_analysis.map(row => ({
+                        month: row.month,
+                        income: formatCurrency(row.income),
+                        expense: formatCurrency(row.expense),
+                        profit: formatCurrency(row.profit)
+                    })) || [],
+                    headers: ["Month", "Income", "Expense", "Net Profit"],
+                    title: "Finance Report - Monthly Analysis",
+                    filename: "Finance_Report"
+                };
+            default: return { data: [], headers: [], title: "", filename: "" };
+        }
+    };
+
+    const exportProps = getExportProps();
+
     if (loading) return (
         <div className="loading-state">
             <div className="spinner"></div>
@@ -54,8 +98,8 @@ export default function Reports() {
                     <p className="page-subtitle">Detailed business intelligence and data exports.</p>
                 </div>
                 <div className="header-actions">
-                    <button className="btn btn-secondary"><Filter size={18} /> Filters</button>
-                    <button className="btn btn-primary"><Download size={18} /> Export PDF</button>
+                    <button className="btn btn-secondary mr-2"><Filter size={18} /> Filters</button>
+                    <ExportButton {...exportProps} />
                 </div>
             </div>
 

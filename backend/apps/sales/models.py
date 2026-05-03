@@ -1,7 +1,9 @@
 from django.db import models
 from apps.inventory.models import Product
+from apps.core.models import Company
 
 class Customer(models.Model):
+    company = models.ForeignKey(Company, on_delete=models.CASCADE, related_name='customers', null=True, blank=True)
     name = models.CharField(max_length=200)
     phone = models.CharField(max_length=50, blank=True)
     email = models.EmailField(blank=True)
@@ -17,6 +19,7 @@ class SalesOrder(models.Model):
         ('confirmed', 'Confirmed'),
         ('cancelled', 'Cancelled'),
     )
+    company = models.ForeignKey(Company, on_delete=models.CASCADE, related_name='sales_orders', null=True, blank=True)
     customer = models.ForeignKey(Customer, on_delete=models.SET_NULL, null=True)
     date = models.DateTimeField(auto_now_add=True)
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='draft')
