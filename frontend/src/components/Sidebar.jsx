@@ -1,92 +1,91 @@
 import React from 'react';
 import { NavLink, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import {
+  LayoutDashboard, BarChart3, Package, PlusCircle,
+  Users, ShoppingCart, FilePlus, DollarSign, Receipt,
+  TrendingUp, ScrollText, LogOut, Zap
+} from 'lucide-react';
+
+const NavItem = ({ to, icon: Icon, label, end = false }) => (
+  <NavLink
+    to={to}
+    end={end}
+    className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}
+  >
+    <Icon className="nav-icon" />
+    <span>{label}</span>
+  </NavLink>
+);
 
 export default function Sidebar() {
-    const { user, logout } = useAuth();
-    const navigate = useNavigate();
+  const { user, logout } = useAuth();
+  const navigate = useNavigate();
 
-    const handleLogout = () => {
-        logout();
-        navigate('/login');
-    };
+  const handleLogout = () => { logout(); navigate('/login'); };
 
-    const isAdmin = user?.role === 'admin';
-    const isManager = user?.role === 'manager' || isAdmin;
+  const isAdmin   = user?.role === 'admin';
+  const isManager = user?.role === 'manager' || isAdmin;
 
-    return (
-        <aside className="sidebar">
-            <div className="sidebar-brand">
-                <span className="brand-icon">⚡</span>
-                <span className="brand-name">ERP<span className="brand-accent">Pro</span></span>
-            </div>
-            
-            <div className="user-info" style={{ padding: '1rem', borderBottom: '1px solid var(--border-color)', marginBottom: '1rem' }}>
-                <p style={{ fontWeight: '600', color: 'var(--text-main)' }}>{user?.username}</p>
-                <p style={{ fontSize: '0.8rem', color: 'var(--primary-color)', textTransform: 'uppercase' }}>{user?.role}</p>
-            </div>
+  return (
+    <aside className="sidebar">
+      {/* Brand */}
+      <div className="sidebar-brand">
+        <div className="brand-logo">
+          <Zap size={18} color="white" />
+        </div>
+        <span className="brand-name">ERP<span>Pro</span></span>
+      </div>
 
-            <nav className="sidebar-nav">
-                <p className="nav-section-label">GENERAL</p>
-                <NavLink to="/" end className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}>
-                    <span className="nav-icon">🚀</span> Dashboard
-                </NavLink>
-                <NavLink to="/reports" className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}>
-                    <span className="nav-icon">📊</span> Reports
-                </NavLink>
+      {/* User Info */}
+      <div className="sidebar-user">
+        <div className="user-avatar">
+          {user?.username?.charAt(0).toUpperCase()}
+        </div>
+        <div>
+          <p className="user-name">{user?.username}</p>
+          <p className="user-role">{user?.role}</p>
+        </div>
+      </div>
 
-                <p className="nav-section-label">INVENTORY</p>
-                <NavLink to="/products" end className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}>
-                    <span className="nav-icon">📦</span> Products
-                </NavLink>
-                {isManager && (
-                    <NavLink to="/add" className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}>
-                        <span className="nav-icon">➕</span> Add Product
-                    </NavLink>
-                )}
+      {/* Navigation */}
+      <nav className="sidebar-nav">
+        <p className="nav-section">General</p>
+        <NavItem to="/"        icon={LayoutDashboard} label="Dashboard"  end />
+        <NavItem to="/reports" icon={BarChart3}       label="Reports" />
 
-                <p className="nav-section-label">SALES</p>
-                <NavLink to="/customers" end className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}>
-                    <span className="nav-icon">👥</span> Customers
-                </NavLink>
-                <NavLink to="/sales" end className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}>
-                    <span className="nav-icon">📈</span> Sales Orders
-                </NavLink>
-                <NavLink to="/sales/new" className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}>
-                    <span className="nav-icon">📝</span> New Sales Order
-                </NavLink>
+        <p className="nav-section">Inventory</p>
+        <NavItem to="/products" icon={Package}    label="Products" end />
+        {isManager && (
+          <NavItem to="/add" icon={PlusCircle} label="Add Product" />
+        )}
 
-                <p className="nav-section-label">FINANCE</p>
-                <NavLink to="/finance" end className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}>
-                    <span className="nav-icon">💰</span> Dashboard
-                </NavLink>
-                <NavLink to="/finance/transactions" className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}>
-                    <span className="nav-icon">📋</span> Transactions
-                </NavLink>
-                <NavLink to="/finance/profit" className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}>
-                    <span className="nav-icon">📊</span> Profit Summary
-                </NavLink>
- 
-                {isAdmin && (
-                    <>
-                        <p className="nav-section-label">SYSTEM</p>
-                        <NavLink to="/audit-logs" className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}>
-                            <span className="nav-icon">📜</span> Audit Logs
-                        </NavLink>
-                    </>
-                )}
-            </nav>
+        <p className="nav-section">Sales</p>
+        <NavItem to="/customers"  icon={Users}       label="Customers" end />
+        <NavItem to="/sales"      icon={ShoppingCart} label="Sales Orders" end />
+        <NavItem to="/sales/new"  icon={FilePlus}    label="New Order" />
 
-            <div className="sidebar-footer" style={{ marginTop: 'auto' }}>
-                <button 
-                    onClick={handleLogout}
-                    className="btn btn-danger" 
-                    style={{ width: '100%', marginBottom: '1rem', border: 'none', background: 'rgba(239, 68, 68, 0.1)' }}
-                >
-                    Logout
-                </button>
-                <span className="version-badge">v2.2</span>
-            </div>
-        </aside>
-    );
+        <p className="nav-section">Finance</p>
+        <NavItem to="/finance"              icon={DollarSign} label="Finance Dashboard" end />
+        <NavItem to="/finance/transactions" icon={Receipt}    label="Transactions" />
+        <NavItem to="/finance/profit"       icon={TrendingUp} label="Profit Summary" />
+
+        {isAdmin && (
+          <>
+            <p className="nav-section">System</p>
+            <NavItem to="/audit-logs" icon={ScrollText} label="Audit Logs" />
+          </>
+        )}
+      </nav>
+
+      {/* Footer */}
+      <div className="sidebar-footer">
+        <button className="logout-btn" onClick={handleLogout}>
+          <LogOut size={16} />
+          <span>Logout</span>
+        </button>
+        <span className="version-badge">v2.3 — ERPPro</span>
+      </div>
+    </aside>
+  );
 }

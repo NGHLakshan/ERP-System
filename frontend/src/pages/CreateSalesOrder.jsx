@@ -1,15 +1,19 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
+import { useNavigate, useParams, Link } from 'react-router-dom';
 import { getCustomers, getProducts, getStock, createSalesOrder, updateSalesOrder, getSalesOrder } from '../api/api';
+import { 
+  FilePlus, ShoppingCart, User, MessageSquare, Plus, Trash2, 
+  ArrowLeft, Save, AlertCircle, Package, Info
+} from 'lucide-react';
 
 const CreateSalesOrder = () => {
     const navigate = useNavigate();
-    const { id } = useParams(); // if id present → edit mode
+    const { id } = useParams();
     const isEditMode = !!id;
 
     const [customers, setCustomers] = useState([]);
     const [products, setProducts] = useState([]);
-    const [stockMap, setStockMap] = useState({}); // productId → available qty
+    const [stockMap, setStockMap] = useState({});
     const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(false);
 
@@ -32,14 +36,12 @@ const CreateSalesOrder = () => {
             setCustomers(custRes.data);
             setProducts(prodRes.data);
 
-            // Build a map: productId → total available quantity
             const map = {};
             stockRes.data.forEach(s => {
                 map[s.product] = (map[s.product] || 0) + s.quantity;
             });
             setStockMap(map);
 
-            // If edit mode → load existing order
             if (isEditMode) {
                 const orderRes = await getSalesOrder(id);
                 const order = orderRes.data;
@@ -72,7 +74,6 @@ const CreateSalesOrder = () => {
         const newItems = [...items];
         newItems[index][field] = value;
 
-        // Auto-fill price when product is selected
         if (field === 'product') {
             const selectedProduct = products.find(p => p.id.toString() === value.toString());
             if (selectedProduct) {
@@ -83,39 +84,19 @@ const CreateSalesOrder = () => {
         setItems(newItems);
     };
 
-    const addItem = () => {
-        setItems([...items, { product: '', quantity: 1, price: 0 }]);
-    };
-
+    const addItem = () => setItems([...items, { product: '', quantity: 1, price: 0 }]);
     const removeItem = (index) => {
         if (items.length === 1) return;
         setItems(items.filter((_, i) => i !== index));
     };
 
-    const calculateTotal = () => {
-        return items.reduce((total, item) => total + (parseFloat(item.quantity) * parseFloat(item.price)), 0);
-    };
-
-    const getAvailableStock = (productId) => {
-        if (!productId) return null;
-        return stockMap[parseInt(productId)] ?? 0;
-    };
-
-    const validateItems = () => {
-        for (let item of items) {
-            if (!item.product || item.quantity <= 0) {
-                alert('Please select a product and enter a valid quantity for all items.');
-                return false;
-            }
-        }
-        return true;
-    };
+    const calculateTotal = () => items.reduce((total, item) => total + (parseFloat(item.quantity) * parseFloat(item.price)), 0);
+    const getAvailableStock = (productId) => productId ? (stockMap[parseInt(productId)] ?? 0) : null;
 
     const handleSubmit = async (e) => {
         e.preventDefault();
         if (!customerId) { alert('Please select a customer.'); return; }
-        if (!validateItems()) return;
-
+        
         setSaving(true);
         const orderData = {
             customer: customerId,
@@ -128,73 +109,91 @@ const CreateSalesOrder = () => {
         };
 
         try {
-            if (isEditMode) {
-                await updateSalesOrder(id, orderData);
-            } else {
-                await createSalesOrder(orderData);
-            }
+            isEditMode ? await updateSalesOrder(id, orderData) : await createSalesOrder(orderData);
             navigate('/sales');
         } catch (error) {
-            console.error('Error saving order:', error);
-            const msg = error.response?.data?.detail || 'Failed to save order.';
-            alert(msg);
+            alert(error.response?.data?.detail || 'Failed to save order.');
         } finally {
             setSaving(false);
         }
     };
 
-    if (loading) return <div className="loading">Loading form data...</div>;
+    if (loading) return (
+        <div className="loading-state">
+            <div className="spinner"></div>
+            <p style={{ color: 'var(--text-muted)', fontSize: '0.875rem' }}>Preparing order form...</p>
+        </div>
+    );
 
     return (
-        <div>
-            <div className="app-header">
-                <h1 className="app-title">
-                    {isEditMode ? '✏️ Edit Sales Order' : '📝 New Sales Order'}
-                </h1>
+        <div className="sales-order-page">
+            <div className="page-header">
+                <div>
+                    <h1 className="page-title">
+                        {isEditMode ? <Edit2 size={24} style={{ color: 'var(--primary)' }} /> : <FilePlus size={24} style={{ color: 'var(--primary)' }} />}
+                        {isEditMode ? 'Edit Sales Order' : 'New Sales Order'}
+                    </h1>
+                    <p className="page-subtitle">{isEditMode ? `Order Reference: SO-${id}` : 'Create a new draft order for a customer'}</p>
+                </div>
+                <div className="header-actions">
+                    <Link to="/sales" className="btn btn-secondary">
+                        <ArrowLeft size={16} /> Back to List
+                    </Link>
+                </div>
             </div>
 
             <div className="card">
                 <form onSubmit={handleSubmit}>
-                    {/* Customer + Notes */}
-                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', marginBottom: '24px' }}>
+                    {/* Basic Info */}
+                    <div className="dashboard-grid" style={{ marginBottom: '2rem' }}>
                         <div className="form-group" style={{ marginBottom: 0 }}>
-                            <label className="form-label">Customer *</label>
+                            <label className="form-label">
+                                <User size={13} style={{ display: 'inline', marginRight: '4px', verticalAlign: 'middle' }} />
+                                Customer *
+                            </label>
                             <select
                                 className="form-input"
                                 value={customerId}
                                 onChange={(e) => setCustomerId(e.target.value)}
                                 required
                             >
-                                <option value="">-- Select Customer --</option>
+                                <option value="">Select a customer</option>
                                 {customers.map(c => (
                                     <option key={c.id} value={c.id}>{c.name}</option>
                                 ))}
                             </select>
                         </div>
                         <div className="form-group" style={{ marginBottom: 0 }}>
-                            <label className="form-label">Notes</label>
+                            <label className="form-label">
+                                <MessageSquare size={13} style={{ display: 'inline', marginRight: '4px', verticalAlign: 'middle' }} />
+                                Notes
+                            </label>
                             <input
                                 type="text"
                                 className="form-input"
                                 value={notes}
                                 onChange={(e) => setNotes(e.target.value)}
-                                placeholder="Optional notes..."
+                                placeholder="Any special instructions..."
                             />
                         </div>
                     </div>
 
-                    {/* Items Table */}
-                    <h3 style={{ marginBottom: '12px' }}>Order Items</h3>
-                    <div style={{ overflowX: 'auto' }}>
-                        <table style={{ width: '100%', borderCollapse: 'collapse', marginBottom: '16px' }}>
+                    {/* Items Section */}
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '1.25rem' }}>
+                        <Package size={18} style={{ color: 'var(--primary-h)' }} />
+                        <h3 style={{ fontSize: '1rem', fontWeight: 700 }}>Order Items</h3>
+                    </div>
+
+                    <div className="table-wrapper" style={{ marginBottom: '1.5rem', border: '1px solid var(--border)' }}>
+                        <table className="data-table">
                             <thead>
-                                <tr style={{ borderBottom: '2px solid var(--border-color)', textAlign: 'left', fontSize: '0.85rem', color: 'var(--text-muted)' }}>
-                                    <th style={{ padding: '10px' }}>PRODUCT</th>
-                                    <th style={{ padding: '10px', width: '80px' }}>STOCK</th>
-                                    <th style={{ padding: '10px', width: '100px' }}>QTY</th>
-                                    <th style={{ padding: '10px', width: '130px' }}>UNIT PRICE</th>
-                                    <th style={{ padding: '10px', width: '120px' }}>SUBTOTAL</th>
-                                    <th style={{ padding: '10px', width: '50px' }}></th>
+                                <tr>
+                                    <th>PRODUCT</th>
+                                    <th style={{ width: '100px', textAlign: 'center' }}>STOCK</th>
+                                    <th style={{ width: '120px' }}>QUANTITY</th>
+                                    <th style={{ width: '150px' }}>UNIT PRICE</th>
+                                    <th style={{ width: '150px' }}>SUBTOTAL</th>
+                                    <th style={{ width: '50px' }}></th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -202,59 +201,51 @@ const CreateSalesOrder = () => {
                                     const available = getAvailableStock(item.product);
                                     const isLowStock = available !== null && item.quantity > available;
                                     return (
-                                        <tr key={index} style={{ borderBottom: '1px solid var(--border-color)' }}>
-                                            <td style={{ padding: '10px' }}>
+                                        <tr key={index}>
+                                            <td style={{ padding: '0.75rem' }}>
                                                 <select
                                                     className="form-input"
-                                                    style={{ margin: 0 }}
                                                     value={item.product}
                                                     onChange={(e) => handleItemChange(index, 'product', e.target.value)}
                                                     required
                                                 >
                                                     <option value="">Select Product</option>
-                                                    {products.map(p => {
-                                                        const qty = stockMap[p.id] ?? 0;
-                                                        return (
-                                                            <option key={p.id} value={p.id}>
-                                                                {p.name} (Stock: {qty})
-                                                            </option>
-                                                        );
-                                                    })}
+                                                    {products.map(p => (
+                                                        <option key={p.id} value={p.id}>
+                                                            {p.name}
+                                                        </option>
+                                                    ))}
                                                 </select>
                                             </td>
-                                            <td style={{ padding: '10px', textAlign: 'center' }}>
+                                            <td style={{ textAlign: 'center' }}>
                                                 {available !== null ? (
-                                                    <span style={{
-                                                        padding: '3px 8px',
-                                                        borderRadius: '999px',
-                                                        fontSize: '0.8rem',
-                                                        fontWeight: 'bold',
-                                                        background: available === 0 ? 'rgba(239,68,68,0.2)' : available < 5 ? 'rgba(245,158,11,0.2)' : 'rgba(16,185,129,0.2)',
-                                                        color: available === 0 ? '#ef4444' : available < 5 ? '#f59e0b' : '#10b981',
-                                                    }}>
+                                                    <span className={`status-badge ${available === 0 ? 'badge-danger' : available < 5 ? 'badge-draft' : 'badge-confirmed'}`} style={{ minWidth: '36px', justifyContent: 'center' }}>
                                                         {available}
                                                     </span>
-                                                ) : '—'}
+                                                ) : <span style={{ color: 'var(--text-muted)' }}>—</span>}
                                             </td>
-                                            <td style={{ padding: '10px' }}>
+                                            <td style={{ padding: '0.75rem' }}>
+                                                <div style={{ position: 'relative' }}>
+                                                    <input
+                                                        type="number"
+                                                        className="form-input"
+                                                        value={item.quantity}
+                                                        min="1"
+                                                        onChange={(e) => handleItemChange(index, 'quantity', e.target.value)}
+                                                        required
+                                                        style={{ borderColor: isLowStock ? 'var(--danger)' : undefined }}
+                                                    />
+                                                    {isLowStock && (
+                                                        <div style={{ position: 'absolute', top: '-18px', right: 0, fontSize: '0.65rem', color: 'var(--danger)', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '2px' }}>
+                                                            <AlertCircle size={10} /> OVER LIMIT
+                                                        </div>
+                                                    )}
+                                                </div>
+                                            </td>
+                                            <td style={{ padding: '0.75rem' }}>
                                                 <input
                                                     type="number"
                                                     className="form-input"
-                                                    style={{ margin: 0, borderColor: isLowStock ? '#ef4444' : undefined }}
-                                                    value={item.quantity}
-                                                    min="1"
-                                                    onChange={(e) => handleItemChange(index, 'quantity', e.target.value)}
-                                                    required
-                                                />
-                                                {isLowStock && (
-                                                    <span style={{ color: '#ef4444', fontSize: '0.75rem' }}>⚠️ Low</span>
-                                                )}
-                                            </td>
-                                            <td style={{ padding: '10px' }}>
-                                                <input
-                                                    type="number"
-                                                    className="form-input"
-                                                    style={{ margin: 0 }}
                                                     value={item.price}
                                                     step="0.01"
                                                     min="0"
@@ -262,23 +253,18 @@ const CreateSalesOrder = () => {
                                                     required
                                                 />
                                             </td>
-                                            <td style={{ padding: '10px', fontWeight: 'bold', color: 'var(--secondary-color)' }}>
-                                                Rs. {(parseFloat(item.quantity) * parseFloat(item.price)).toFixed(2)}
+                                            <td style={{ padding: '0.75rem', fontWeight: 700, color: 'var(--text)' }}>
+                                                Rs. {(parseFloat(item.quantity) * parseFloat(item.price)).toLocaleString(undefined, { minimumFractionDigits: 2 })}
                                             </td>
-                                            <td style={{ padding: '10px', textAlign: 'center' }}>
+                                            <td style={{ textAlign: 'center' }}>
                                                 <button
                                                     type="button"
                                                     onClick={() => removeItem(index)}
                                                     disabled={items.length === 1}
-                                                    style={{
-                                                        background: 'none',
-                                                        border: 'none',
-                                                        cursor: items.length === 1 ? 'not-allowed' : 'pointer',
-                                                        color: items.length === 1 ? 'var(--text-muted)' : '#ef4444',
-                                                        fontSize: '1.2rem',
-                                                    }}
+                                                    className="btn-danger"
+                                                    style={{ background: 'none', border: 'none', padding: '4px', cursor: items.length === 1 ? 'not-allowed' : 'pointer', opacity: items.length === 1 ? 0.3 : 1 }}
                                                 >
-                                                    ✕
+                                                    <Trash2 size={16} />
                                                 </button>
                                             </td>
                                         </tr>
@@ -286,12 +272,12 @@ const CreateSalesOrder = () => {
                                 })}
                             </tbody>
                             <tfoot>
-                                <tr>
-                                    <td colSpan="4" style={{ padding: '16px 10px', textAlign: 'right', fontWeight: 'bold', color: 'var(--text-muted)' }}>
-                                        TOTAL AMOUNT:
+                                <tr style={{ background: 'rgba(255,255,255,0.02)' }}>
+                                    <td colSpan="4" style={{ textAlign: 'right', fontWeight: 600, color: 'var(--text-muted)', padding: '1.25rem' }}>
+                                        GRAND TOTAL
                                     </td>
-                                    <td style={{ padding: '16px 10px', fontWeight: '700', fontSize: '1.3rem', color: 'var(--primary-color)' }}>
-                                        Rs. {calculateTotal().toFixed(2)}
+                                    <td style={{ fontWeight: 800, fontSize: '1.25rem', color: 'var(--primary-h)', padding: '1.25rem' }}>
+                                        Rs. {calculateTotal().toLocaleString(undefined, { minimumFractionDigits: 2 })}
                                     </td>
                                     <td></td>
                                 </tr>
@@ -299,24 +285,42 @@ const CreateSalesOrder = () => {
                         </table>
                     </div>
 
-                    {/* Actions */}
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                         <button type="button" className="btn btn-secondary" onClick={addItem}>
-                            + Add Item
+                            <Plus size={16} /> Add Another Item
                         </button>
-                        <div style={{ display: 'flex', gap: '10px' }}>
-                            <button type="button" className="btn btn-secondary" onClick={() => navigate('/sales')}>
-                                Cancel
-                            </button>
+                        <div style={{ display: 'flex', gap: '0.875rem' }}>
+                            <Link to="/sales" className="btn btn-secondary">Cancel</Link>
                             <button type="submit" className="btn btn-primary" disabled={saving}>
-                                {saving ? 'Saving...' : isEditMode ? '💾 Update Order' : '💾 Save as Draft'}
+                                {saving ? (
+                                    <><div className="spinner" style={{ width: '14px', height: '14px', borderWidth: '2px' }}></div> Processing...</>
+                                ) : (
+                                    <><Save size={16} /> {isEditMode ? 'Update Order' : 'Save as Draft'}</>
+                                )}
                             </button>
                         </div>
                     </div>
                 </form>
             </div>
+
+            <div className="card" style={{ marginTop: '1.5rem', background: 'rgba(99,102,241,0.05)', borderStyle: 'dashed' }}>
+                <div style={{ display: 'flex', gap: '12px', alignItems: 'flex-start' }}>
+                    <Info size={18} style={{ color: 'var(--primary)', marginTop: '2px' }} />
+                    <div>
+                        <p style={{ fontSize: '0.85rem', fontWeight: 600, color: 'var(--text)' }}>Inventory Note</p>
+                        <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>
+                            Stock will only be deducted when the order is <strong>Confirmed</strong>. Draft orders reserve no stock. 
+                            Prices are automatically pulled from current product data but can be overridden.
+                        </p>
+                    </div>
+                </div>
+            </div>
         </div>
     );
 };
+
+const Edit2 = ({ size, style }) => (
+    <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={style}><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"/></svg>
+);
 
 export default CreateSalesOrder;

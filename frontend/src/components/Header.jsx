@@ -7,18 +7,41 @@ export default function Header() {
     const { user } = useAuth();
 
     return (
-        <header className="flex items-center justify-between px-8 py-4 mb-4 border-b border-white/5 bg-slate-900/20 backdrop-blur-md sticky top-0 z-30">
-            <div className="flex-1 flex justify-start">
+        <header className="main-header">
+            {/* Left: Search */}
+            <div style={{ flex: 1, maxWidth: '480px' }}>
                 <GlobalSearch />
             </div>
-            
-            <div className="flex items-center gap-6">
+
+            {/* Right: Notifications + User */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.875rem' }}>
                 <NotificationBell />
-                <div className="flex items-center gap-3 bg-slate-800/50 px-3 py-1.5 rounded-full border border-white/5">
-                    <div className="w-8 h-8 rounded-full bg-indigo-500 flex items-center justify-center text-sm font-bold text-white shadow-lg shadow-indigo-500/20">
+
+                <div style={{
+                    display: 'flex', alignItems: 'center', gap: '10px',
+                    padding: '0.4rem 0.875rem 0.4rem 0.4rem',
+                    background: 'var(--surface-2)',
+                    borderRadius: '999px',
+                    border: '1px solid var(--border)',
+                }}>
+                    <div style={{
+                        width: '30px', height: '30px',
+                        borderRadius: '50%',
+                        background: 'linear-gradient(135deg, #6366f1, #8b5cf6)',
+                        display: 'flex', alignItems: 'center', justifyContent: 'center',
+                        fontSize: '0.78rem', fontWeight: '700', color: 'white',
+                        flexShrink: 0,
+                    }}>
                         {user?.username?.charAt(0).toUpperCase()}
                     </div>
-                    <span className="text-sm font-medium text-slate-200">{user?.username}</span>
+                    <div>
+                        <p style={{ fontSize: '0.8rem', fontWeight: '600', color: 'var(--text)', lineHeight: 1.2 }}>
+                            {user?.username}
+                        </p>
+                        <p style={{ fontSize: '0.68rem', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                            {user?.role}
+                        </p>
+                    </div>
                 </div>
             </div>
         </header>

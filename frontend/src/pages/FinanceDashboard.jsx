@@ -1,5 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
+import { 
+  BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, 
+  Cell, Legend
+} from 'recharts';
+import { 
+  DollarSign, TrendingUp, TrendingDown, Receipt, 
+  PieChart as PieIcon, ArrowRight, Calendar, ArrowUpRight, ArrowDownRight
+} from 'lucide-react';
 import { getFinanceSummary, getTransactions, getMonthlyReport } from '../api/api';
 
 export default function FinanceDashboard() {
@@ -18,7 +26,19 @@ export default function FinanceDashboard() {
                 ]);
                 setSummary(sumRes.data);
                 setRecentTx(txRes.data.slice(0, 8));
-                setMonthlyData(monthRes.data);
+                
+                // Format monthly data for Recharts
+                const formattedMonths = monthRes.data.map(row => {
+                    const [year, monthNum] = row.month.split('-');
+                    const date = new Date(year, parseInt(monthNum) - 1);
+                    return {
+                        name: date.toLocaleString('default', { month: 'short' }),
+                        Income: parseFloat(row.income),
+                        Expense: parseFloat(row.expense),
+                        Profit: parseFloat(row.profit)
+                    };
+                });
+                setMonthlyData(formattedMonths);
             } catch (err) {
                 console.error(err);
             } finally {
@@ -33,146 +53,167 @@ export default function FinanceDashboard() {
 
     const isProfit = summary.net_profit >= 0;
 
-    // Bar chart max value
-    const maxBar = Math.max(...monthlyData.map(d => Math.max(d.income, d.expense)), 1);
-
-    const monthNames = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+    if (loading) return (
+        <div className="loading-state">
+            <div className="spinner"></div>
+            <p style={{ color: 'var(--text-muted)', fontSize: '0.875rem' }}>Analyzing financial records...</p>
+        </div>
+    );
 
     return (
         <div className="finance-page">
             <div className="page-header">
                 <div>
-                    <h1 className="page-title">💰 Finance Dashboard</h1>
-                    <p className="page-subtitle">Real-time financial overview of your business</p>
+                    <h1 className="page-title">
+                        <DollarSign size={24} style={{ color: 'var(--primary)' }} />
+                        Finance Dashboard
+                    </h1>
+                    <p className="page-subtitle">Complete financial health overview</p>
                 </div>
-                <div style={{ display: 'flex', gap: '0.75rem' }}>
-                    <Link to="/finance/transactions" className="btn btn-secondary">📋 Transactions</Link>
-                    <Link to="/finance/profit" className="btn btn-primary">📊 Profit Summary</Link>
+                <div className="header-actions">
+                    <Link to="/finance/transactions" className="btn btn-secondary">
+                        <Receipt size={16} /> Transactions
+                    </Link>
+                    <Link to="/finance/profit" className="btn btn-primary">
+                        <PieIcon size={16} /> Profit Summary
+                    </Link>
                 </div>
             </div>
 
-            {loading ? (
-                <div className="loading-state">
-                    <div className="spinner"></div>
-                    <p>Loading financial data...</p>
+            {/* KPI Cards */}
+            <div className="kpi-grid">
+                <div className="kpi-card">
+                    <div className="kpi-icon sales-icon">
+                        <TrendingUp size={24} />
+                    </div>
+                    <div>
+                        <p className="kpi-label">Total Income</p>
+                        <p className="kpi-value income-value" style={{ color: 'var(--success)' }}>{formatCurrency(summary.total_income)}</p>
+                        <p className="kpi-trend up">
+                            <ArrowUpRight size={12} /> Revenue from sales
+                        </p>
+                    </div>
                 </div>
-            ) : (
-                <>
-                    {/* Summary Cards */}
-                    <div className="finance-cards">
-                        <div className="finance-card income-card">
-                            <div className="finance-card-icon">📈</div>
-                            <div className="finance-card-body">
-                                <p className="finance-card-label">Total Income</p>
-                                <p className="finance-card-value income-value">{formatCurrency(summary.total_income)}</p>
-                                <p className="finance-card-sub">From confirmed sales</p>
-                            </div>
-                        </div>
-                        <div className="finance-card expense-card">
-                            <div className="finance-card-icon">📉</div>
-                            <div className="finance-card-body">
-                                <p className="finance-card-label">Total Expenses</p>
-                                <p className="finance-card-value expense-value">{formatCurrency(summary.total_expense)}</p>
-                                <p className="finance-card-sub">From received purchases</p>
-                            </div>
-                        </div>
-                        <div className={`finance-card ${isProfit ? 'profit-card' : 'loss-card'}`}>
-                            <div className="finance-card-icon">{isProfit ? '🏆' : '⚠️'}</div>
-                            <div className="finance-card-body">
-                                <p className="finance-card-label">Net {isProfit ? 'Profit' : 'Loss'}</p>
-                                <p className={`finance-card-value ${isProfit ? 'profit-value' : 'loss-value'}`}>
-                                    {formatCurrency(Math.abs(summary.net_profit))}
-                                </p>
-                                <p className="finance-card-sub">Income − Expenses</p>
-                            </div>
-                        </div>
-                    </div>
 
-                    {/* Monthly Bar Chart */}
-                    {monthlyData.length > 0 && (
-                        <div className="finance-section">
-                            <h2 className="section-title">📊 Monthly Overview ({new Date().getFullYear()})</h2>
-                            <div className="chart-container">
-                                <div className="bar-chart">
-                                    {monthlyData.map((row, i) => {
-                                        const [year, monthNum] = row.month.split('-');
-                                        const label = monthNames[parseInt(monthNum) - 1];
-                                        const incomeHeight = maxBar > 0 ? (row.income / maxBar) * 180 : 0;
-                                        const expenseHeight = maxBar > 0 ? (row.expense / maxBar) * 180 : 0;
-                                        return (
-                                            <div key={i} className="bar-group">
-                                                <div className="bars">
-                                                    <div
-                                                        className="bar bar-income"
-                                                        style={{ height: `${incomeHeight}px` }}
-                                                        title={`Income: ${formatCurrency(row.income)}`}
-                                                    ></div>
-                                                    <div
-                                                        className="bar bar-expense"
-                                                        style={{ height: `${expenseHeight}px` }}
-                                                        title={`Expense: ${formatCurrency(row.expense)}`}
-                                                    ></div>
-                                                </div>
-                                                <span className="bar-label">{label}</span>
-                                            </div>
-                                        );
-                                    })}
-                                </div>
-                                <div className="chart-legend">
-                                    <span className="legend-item"><span className="legend-dot income-dot"></span>Income</span>
-                                    <span className="legend-item"><span className="legend-dot expense-dot"></span>Expense</span>
-                                </div>
-                            </div>
-                        </div>
-                    )}
-
-                    {/* Recent Transactions */}
-                    <div className="finance-section">
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
-                            <h2 className="section-title" style={{ margin: 0 }}>🕐 Recent Transactions</h2>
-                            <Link to="/finance/transactions" style={{ fontSize: '0.85rem', color: 'var(--primary-color)' }}>View All →</Link>
-                        </div>
-                        {recentTx.length === 0 ? (
-                            <div className="empty-state">
-                                <p>No transactions yet. Confirm a sale or receive a purchase to start tracking!</p>
-                            </div>
-                        ) : (
-                            <div className="table-wrapper">
-                                <table className="data-table">
-                                    <thead>
-                                        <tr>
-                                            <th>Reference</th>
-                                            <th>Type</th>
-                                            <th>Description</th>
-                                            <th>Date</th>
-                                            <th>Amount</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        {recentTx.map(tx => (
-                                            <tr key={tx.id}>
-                                                <td><span className="ref-badge">{tx.reference}</span></td>
-                                                <td>
-                                                    <span className={`tx-type-badge ${tx.type === 'INCOME' ? 'badge-income' : 'badge-expense'}`}>
-                                                        {tx.type === 'INCOME' ? '📈 Income' : '📉 Expense'}
-                                                    </span>
-                                                </td>
-                                                <td style={{ color: 'var(--text-muted)', fontSize: '0.875rem' }}>{tx.description}</td>
-                                                <td style={{ color: 'var(--text-muted)', fontSize: '0.875rem' }}>{tx.date}</td>
-                                                <td>
-                                                    <span className={tx.type === 'INCOME' ? 'amount-income' : 'amount-expense'}>
-                                                        {tx.type === 'INCOME' ? '+' : '-'}{formatCurrency(tx.amount)}
-                                                    </span>
-                                                </td>
-                                            </tr>
-                                        ))}
-                                    </tbody>
-                                </table>
-                            </div>
-                        )}
+                <div className="kpi-card">
+                    <div className="kpi-icon stock-icon">
+                        <TrendingDown size={24} />
                     </div>
-                </>
-            )}
+                    <div>
+                        <p className="kpi-label">Total Expenses</p>
+                        <p className="kpi-value expense-value" style={{ color: 'var(--danger)' }}>{formatCurrency(summary.total_expense)}</p>
+                        <p className="kpi-trend down">
+                            <ArrowDownRight size={12} /> Operational costs
+                        </p>
+                    </div>
+                </div>
+
+                <div className="kpi-card" style={{ borderLeft: `4px solid ${isProfit ? 'var(--success)' : 'var(--danger)'}` }}>
+                    <div className="kpi-icon profit-icon" style={{ background: isProfit ? 'rgba(16,185,129,0.1)' : 'rgba(239,68,68,0.1)', color: isProfit ? 'var(--success)' : 'var(--danger)' }}>
+                        <DollarSign size={24} />
+                    </div>
+                    <div>
+                        <p className="kpi-label">Net {isProfit ? 'Profit' : 'Loss'}</p>
+                        <p className="kpi-value" style={{ color: isProfit ? 'var(--success)' : 'var(--danger)' }}>
+                            {formatCurrency(Math.abs(summary.net_profit))}
+                        </p>
+                        <p className="kpi-trend" style={{ color: 'var(--text-muted)' }}>
+                            Performance delta
+                        </p>
+                    </div>
+                </div>
+            </div>
+
+            {/* Charts Section */}
+            <div className="dashboard-grid" style={{ marginBottom: '1.5rem' }}>
+                <div className="dashboard-section full-width">
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
+                        <h2 className="section-title">
+                            <Calendar size={18} style={{ color: 'var(--primary)' }} />
+                            Monthly Performance ({new Date().getFullYear()})
+                        </h2>
+                    </div>
+                    <div style={{ width: '100%', height: 300 }}>
+                        <ResponsiveContainer width="100%" height="100%">
+                            <BarChart data={monthlyData} margin={{ top: 10, right: 10, left: 10, bottom: 0 }}>
+                                <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" vertical={false} />
+                                <XAxis 
+                                    dataKey="name" 
+                                    axisLine={false} 
+                                    tickLine={false} 
+                                    tick={{ fill: 'var(--text-muted)', fontSize: 12 }} 
+                                />
+                                <YAxis 
+                                    axisLine={false} 
+                                    tickLine={false} 
+                                    tick={{ fill: 'var(--text-muted)', fontSize: 12 }}
+                                    tickFormatter={(val) => `Rs.${val/1000}k`}
+                                />
+                                <Tooltip 
+                                    contentStyle={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: '8px', color: 'var(--text)' }}
+                                    itemStyle={{ fontSize: '12px' }}
+                                />
+                                <Legend wrapperStyle={{ paddingTop: '10px' }} />
+                                <Bar dataKey="Income" fill="var(--success)" radius={[4, 4, 0, 0]} />
+                                <Bar dataKey="Expense" fill="var(--danger)" radius={[4, 4, 0, 0]} />
+                            </BarChart>
+                        </ResponsiveContainer>
+                    </div>
+                </div>
+            </div>
+
+            {/* Recent Transactions Table */}
+            <div className="card">
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
+                    <h2 className="section-title" style={{ margin: 0 }}>
+                        <Receipt size={18} style={{ color: 'var(--primary)' }} />
+                        Recent Financial Activity
+                    </h2>
+                    <Link to="/finance/transactions" className="btn btn-secondary" style={{ padding: '0.4rem 0.8rem', fontSize: '0.75rem' }}>
+                        View Full History <ArrowRight size={14} />
+                    </Link>
+                </div>
+                
+                {recentTx.length === 0 ? (
+                    <div style={{ textAlign: 'center', padding: '3rem', color: 'var(--text-muted)' }}>
+                        <Info size={40} style={{ margin: '0 auto 1rem', opacity: 0.2 }} />
+                        <p>No financial activity recorded yet.</p>
+                    </div>
+                ) : (
+                    <div className="table-wrapper">
+                        <table className="data-table">
+                            <thead>
+                                <tr>
+                                    <th>REFERENCE</th>
+                                    <th>TYPE</th>
+                                    <th>DESCRIPTION</th>
+                                    <th>DATE</th>
+                                    <th style={{ textAlign: 'right' }}>AMOUNT</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {recentTx.map(tx => (
+                                    <tr key={tx.id}>
+                                        <td><span className="ref-badge">{tx.reference}</span></td>
+                                        <td>
+                                            <span className={`status-badge ${tx.type === 'INCOME' ? 'badge-confirmed' : 'badge-danger'}`}>
+                                                {tx.type === 'INCOME' ? 'Income' : 'Expense'}
+                                            </span>
+                                        </td>
+                                        <td style={{ color: 'var(--text-sub)' }}>{tx.description}</td>
+                                        <td style={{ color: 'var(--text-muted)' }}>{new Date(tx.date).toLocaleDateString()}</td>
+                                        <td style={{ textAlign: 'right', fontWeight: 700 }}>
+                                            <span style={{ color: tx.type === 'INCOME' ? 'var(--success)' : 'var(--danger)' }}>
+                                                {tx.type === 'INCOME' ? '+' : '-'}{formatCurrency(tx.amount)}
+                                            </span>
+                                        </td>
+                                    </tr>
+                                ))}
+                            </tbody>
+                        </table>
+                    </div>
+                )}
+            </div>
         </div>
     );
 }

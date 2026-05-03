@@ -1,96 +1,103 @@
 import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import api from '../api/api';
+import { Package, ArrowLeft, Save, AlertCircle, Tag, FileText, AlertTriangle } from 'lucide-react';
 
 const AddProduct = () => {
     const navigate = useNavigate();
-    const [formData, setFormData] = useState({
-        name: '',
-        description: '',
-        price: '',
-    });
-    const [loading, setLoading] = useState(false);
-    const [error, setError] = useState('');
+    const [formData, setFormData] = useState({ name: '', description: '', price: '', reorder_level: 10 });
+    const [loading, setLoading]   = useState(false);
+    const [error, setError]       = useState('');
 
-    const handleChange = (e) => {
-        setFormData({
-            ...formData,
-            [e.target.name]: e.target.value
-        });
-    };
+    const handleChange = e => setFormData(p => ({ ...p, [e.target.name]: e.target.value }));
 
-    const handleSubmit = async (e) => {
-        e.preventDefault();
-        setLoading(true);
-        setError('');
-        
+    const handleSubmit = async e => {
+        e.preventDefault(); setLoading(true); setError('');
         try {
-            await api.post('products/', formData);
-            navigate('/');
-        } catch (err) {
-            console.error('Error adding product:', err);
-            setError('Failed to add product. Please check the inputs.');
+            await api.post('inventory/products/', formData);
+            navigate('/products');
+        } catch {
+            setError('Failed to save product. Please check your inputs.');
             setLoading(false);
         }
     };
 
     return (
         <div>
-            <div className="app-header" style={{ marginBottom: '2rem' }}>
-                <h1 className="app-title">Add New Product</h1>
-                <Link to="/" className="btn" style={{ background: 'transparent', color: 'var(--text-muted)' }}>
-                    ← Back to List
-                </Link>
+            {/* Header */}
+            <div className="page-header">
+                <div>
+                    <h1 className="page-title"><Package size={24} style={{ color: 'var(--primary)' }} /> Add New Product</h1>
+                    <p className="page-subtitle">Fill in the details to add a product to inventory.</p>
+                </div>
+                <div className="header-actions">
+                    <Link to="/products" className="btn btn-secondary"><ArrowLeft size={16} /> Back</Link>
+                </div>
             </div>
 
-            <div className="form-container" style={{ maxWidth: '600px', margin: '0 auto' }}>
-                {error && <div style={{ color: 'var(--danger-color)', marginBottom: '1rem' }}>{error}</div>}
-                
-                <form onSubmit={handleSubmit}>
-                    <div className="form-group">
-                        <label>Product Name</label>
-                        <input
-                            type="text"
-                            name="name"
-                            className="form-input"
-                            value={formData.name}
-                            onChange={handleChange}
-                            required
-                        />
+            <div style={{ maxWidth: '600px' }}>
+                {error && (
+                    <div style={{
+                        display: 'flex', alignItems: 'center', gap: '8px',
+                        background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.2)',
+                        borderRadius: '8px', padding: '0.75rem 1rem', marginBottom: '1.25rem',
+                        color: '#f87171', fontSize: '0.875rem',
+                    }}>
+                        <AlertCircle size={16} style={{ flexShrink: 0 }} />{error}
                     </div>
-                    
-                    <div className="form-group">
-                        <label>Description</label>
-                        <textarea
-                            name="description"
-                            className="form-input"
-                            value={formData.description}
-                            onChange={handleChange}
-                        />
-                    </div>
-                    
-                    <div className="form-group">
-                        <label>Price</label>
-                        <input
-                            type="number"
-                            name="price"
-                            step="0.01"
-                            className="form-input"
-                            value={formData.price}
-                            onChange={handleChange}
-                            required
-                        />
-                    </div>
-                    
-                    <button 
-                        type="submit" 
-                        className="btn btn-primary" 
-                        style={{ width: '100%', marginTop: '1rem' }}
-                        disabled={loading}
-                    >
-                        {loading ? 'Saving...' : 'Save Product'}
-                    </button>
-                </form>
+                )}
+
+                <div className="card">
+                    <form onSubmit={handleSubmit}>
+                        {/* Product Name */}
+                        <div className="form-group">
+                            <label className="form-label">
+                                <FileText size={13} style={{ display: 'inline', marginRight: '4px', verticalAlign: 'middle' }} />
+                                Product Name *
+                            </label>
+                            <input type="text" name="name" className="form-input" value={formData.name}
+                                onChange={handleChange} required placeholder="e.g. Samsung Galaxy A55" />
+                        </div>
+
+                        {/* Description */}
+                        <div className="form-group">
+                            <label className="form-label">Description</label>
+                            <textarea name="description" className="form-input" value={formData.description}
+                                onChange={handleChange} placeholder="Optional product description..." />
+                        </div>
+
+                        {/* Price + Reorder Level */}
+                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+                            <div className="form-group" style={{ marginBottom: 0 }}>
+                                <label className="form-label">
+                                    <Tag size={13} style={{ display: 'inline', marginRight: '4px', verticalAlign: 'middle' }} />
+                                    Price (Rs.) *
+                                </label>
+                                <input type="number" name="price" step="0.01" min="0" className="form-input"
+                                    value={formData.price} onChange={handleChange} required placeholder="0.00" />
+                            </div>
+                            <div className="form-group" style={{ marginBottom: 0 }}>
+                                <label className="form-label">
+                                    <AlertTriangle size={13} style={{ display: 'inline', marginRight: '4px', verticalAlign: 'middle' }} />
+                                    Reorder Level
+                                </label>
+                                <input type="number" name="reorder_level" min="0" className="form-input"
+                                    value={formData.reorder_level} onChange={handleChange} placeholder="10" />
+                            </div>
+                        </div>
+
+                        {/* Submit */}
+                        <div style={{ display: 'flex', gap: '0.75rem', marginTop: '1.5rem' }}>
+                            <button type="submit" className="btn btn-primary" disabled={loading} style={{ flex: 1, justifyContent: 'center' }}>
+                                {loading
+                                    ? <><div style={{ width: '14px', height: '14px', border: '2px solid rgba(255,255,255,0.3)', borderTopColor: 'white', borderRadius: '50%', animation: 'spin 0.7s linear infinite' }} /> Saving...</>
+                                    : <><Save size={16} /> Save Product</>
+                                }
+                            </button>
+                            <Link to="/products" className="btn btn-secondary"><ArrowLeft size={16} /> Cancel</Link>
+                        </div>
+                    </form>
+                </div>
             </div>
         </div>
     );

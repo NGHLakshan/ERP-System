@@ -18,58 +18,64 @@ import Dashboard from './pages/Dashboard';
 import Reports from './pages/Reports';
 import AuditLogs from './pages/AuditLogs';
 
-function AppContent() {
-    return (
-        <Routes>
-            <Route path="/login" element={<LoginPage />} />
-            
-            <Route path="/*" element={
-                <ProtectedRoute>
-                    <div style={{ display: 'flex' }}>
-                        <Sidebar />
-                        <div className="app-container" style={{ flexGrow: 1, paddingLeft: '20px' }}>
-                            <Header />
-                            <Routes>
-                                <Route path="/" element={<Dashboard />} />
-                                <Route path="/reports" element={<Reports />} />
-                                <Route path="/products" element={<ProductList />} />
-                                <Route path="/add" element={
-                                    <ProtectedRoute roles={['admin', 'manager']}>
-                                        <AddProduct />
-                                    </ProtectedRoute>
-                                } />
-                                <Route path="/customers" element={<CustomerList />} />
-                                <Route path="/sales" element={<SalesOrderList />} />
-                                <Route path="/sales/new" element={<CreateSalesOrder />} />
-                                <Route path="/sales/:id" element={<SalesOrderDetails />} />
-                                <Route path="/sales/:id/edit" element={<CreateSalesOrder />} />
-                                {/* Finance Routes */}
-                                <Route path="/finance" element={<FinanceDashboard />} />
-                                <Route path="/finance/transactions" element={<TransactionList />} />
-                                <Route path="/finance/profit" element={<ProfitSummary />} />
-                                <Route path="/audit-logs" element={
-                                    <ProtectedRoute roles={['admin']}>
-                                        <AuditLogs />
-                                    </ProtectedRoute>
-                                } />
-                                <Route path="*" element={<Navigate to="/" />} />
-                            </Routes>
-                        </div>
-                    </div>
-                </ProtectedRoute>
+function AppLayout() {
+  return (
+    <div className="layout">
+      <Sidebar />
+      <div className="main-content">
+        <Header />
+        <div className="page-body">
+          <Routes>
+            <Route path="/"       element={<Dashboard />} />
+            <Route path="/reports" element={<Reports />} />
+            <Route path="/products" element={<ProductList />} />
+            <Route path="/add" element={
+              <ProtectedRoute roles={['admin', 'manager']}>
+                <AddProduct />
+              </ProtectedRoute>
             } />
-        </Routes>
-    );
+            <Route path="/customers"   element={<CustomerList />} />
+            <Route path="/sales"       element={<SalesOrderList />} />
+            <Route path="/sales/new"   element={<CreateSalesOrder />} />
+            <Route path="/sales/:id"   element={<SalesOrderDetails />} />
+            <Route path="/sales/:id/edit" element={<CreateSalesOrder />} />
+            <Route path="/finance"              element={<FinanceDashboard />} />
+            <Route path="/finance/transactions" element={<TransactionList />} />
+            <Route path="/finance/profit"       element={<ProfitSummary />} />
+            <Route path="/audit-logs" element={
+              <ProtectedRoute roles={['admin']}>
+                <AuditLogs />
+              </ProtectedRoute>
+            } />
+            <Route path="*" element={<Navigate to="/" />} />
+          </Routes>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function AppContent() {
+  return (
+    <Routes>
+      <Route path="/login" element={<LoginPage />} />
+      <Route path="/*" element={
+        <ProtectedRoute>
+          <AppLayout />
+        </ProtectedRoute>
+      } />
+    </Routes>
+  );
 }
 
 function App() {
-    return (
-        <AuthProvider>
-            <Router>
-                <AppContent />
-            </Router>
-        </AuthProvider>
-    );
+  return (
+    <AuthProvider>
+      <Router>
+        <AppContent />
+      </Router>
+    </AuthProvider>
+  );
 }
 
 export default App;
