@@ -29,13 +29,17 @@ def log_save(sender, instance, created, **kwargs):
     if user and not user.is_authenticated:
         user = None
 
-    AuditLog.objects.create(
-        user=user,
-        model_name=sender.__name__,
-        object_id=instance.pk,
-        action=action,
-        new_data=get_serializable_dict(instance)
-    )
+    try:
+        AuditLog.objects.create(
+            user=user,
+            model_name=sender.__name__,
+            object_id=instance.pk,
+            action=action,
+            new_data=get_serializable_dict(instance)
+        )
+    except Exception:
+        # This can happen during migrations when the AuditLog table doesn't exist yet
+        pass
 
 @receiver(pre_delete)
 def log_delete(sender, instance, **kwargs):
@@ -46,10 +50,14 @@ def log_delete(sender, instance, **kwargs):
     if user and not user.is_authenticated:
         user = None
 
-    AuditLog.objects.create(
-        user=user,
-        model_name=sender.__name__,
-        object_id=instance.pk,
-        action='DELETE',
-        old_data=get_serializable_dict(instance)
-    )
+    try:
+        AuditLog.objects.create(
+            user=user,
+            model_name=sender.__name__,
+            object_id=instance.pk,
+            action='DELETE',
+            old_data=get_serializable_dict(instance)
+        )
+    except Exception:
+        # This can happen during migrations when the AuditLog table doesn't exist yet
+        pass
