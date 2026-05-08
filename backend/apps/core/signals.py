@@ -3,6 +3,7 @@ from django.dispatch import receiver
 from django.forms.models import model_to_dict
 from django.core.serializers.json import DjangoJSONEncoder
 import json
+from django.db import connection
 from .models import AuditLog
 from .middleware import get_current_user
 
@@ -29,6 +30,10 @@ def log_save(sender, instance, created, **kwargs):
     if user and not user.is_authenticated:
         user = None
 
+    # Don't log if we are in a migration and the table doesn't exist yet
+    if 'core_auditlog' not in connection.introspection.table_names():
+        return
+
     try:
         AuditLog.objects.create(
             user=user,
@@ -38,7 +43,6 @@ def log_save(sender, instance, created, **kwargs):
             new_data=get_serializable_dict(instance)
         )
     except Exception:
-        # This can happen during migrations when the AuditLog table doesn't exist yet
         pass
 
 @receiver(pre_delete)
@@ -50,6 +54,10 @@ def log_delete(sender, instance, **kwargs):
     if user and not user.is_authenticated:
         user = None
 
+    # Don't log if we are in a migration and the table doesn't exist yet
+    if 'core_auditlog' not in connection.introspection.table_names():
+        return
+
     try:
         AuditLog.objects.create(
             user=user,
@@ -59,5 +67,4 @@ def log_delete(sender, instance, **kwargs):
             old_data=get_serializable_dict(instance)
         )
     except Exception:
-        # This can happen during migrations when the AuditLog table doesn't exist yet
         pass
