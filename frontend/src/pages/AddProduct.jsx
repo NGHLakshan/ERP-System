@@ -1,13 +1,17 @@
 import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import api from '../api/api';
-import { Package, ArrowLeft, Save, AlertCircle, Tag, FileText, AlertTriangle } from 'lucide-react';
+import { useAuth } from '../context/AuthContext';
+import { Package, ArrowLeft, Save, AlertCircle, Tag, FileText, AlertTriangle, ShieldAlert } from 'lucide-react';
 
 const AddProduct = () => {
     const navigate = useNavigate();
+    const { user } = useAuth();
     const [formData, setFormData] = useState({ name: '', description: '', price: '', reorder_level: 10 });
     const [loading, setLoading]   = useState(false);
     const [error, setError]       = useState('');
+
+    const isManager = user?.role === 'admin' || user?.role === 'manager';
 
     const handleChange = e => setFormData(p => ({ ...p, [e.target.name]: e.target.value }));
 
@@ -21,6 +25,19 @@ const AddProduct = () => {
             setLoading(false);
         }
     };
+
+    if (!isManager) {
+        return (
+            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minHeight: '60vh', textAlign: 'center' }}>
+                <div style={{ background: 'rgba(239,68,68,0.1)', padding: '2rem', borderRadius: '1.5rem', marginBottom: '1.5rem' }}>
+                    <ShieldAlert size={48} color="#ef4444" />
+                </div>
+                <h2 style={{ marginBottom: '0.5rem' }}>Access Denied</h2>
+                <p style={{ color: 'var(--text-muted)', marginBottom: '1.5rem' }}>You don't have permission to add products.</p>
+                <Link to="/products" className="btn btn-primary">Go Back to Products</Link>
+            </div>
+        );
+    }
 
     return (
         <div>

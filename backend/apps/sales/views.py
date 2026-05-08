@@ -8,12 +8,14 @@ from .serializers import (
     SalesOrderCreateSerializer,
     SalesItemSerializer
 )
+from apps.users.permissions import IsManager, IsStaff
 from apps.inventory.models import Stock
 
 
 class CustomerViewSet(viewsets.ModelViewSet):
     queryset = Customer.objects.all().order_by('-created_at')
     serializer_class = CustomerSerializer
+    permission_classes = [IsStaff]
 
     def get_queryset(self):
         queryset = Customer.objects.all().order_by('-created_at')
@@ -25,6 +27,7 @@ class CustomerViewSet(viewsets.ModelViewSet):
 
 class SalesOrderViewSet(viewsets.ModelViewSet):
     queryset = SalesOrder.objects.all().order_by('-date')
+    permission_classes = [IsStaff]
 
     def get_serializer_class(self):
         if self.action in ['create', 'update', 'partial_update']:
@@ -51,7 +54,7 @@ class SalesOrderViewSet(viewsets.ModelViewSet):
             )
         return super().partial_update(request, *args, **kwargs)
 
-    @action(detail=True, methods=['post'])
+    @action(detail=True, methods=['post'], permission_classes=[IsManager])
     def confirm(self, request, pk=None):
         """Mark a SalesOrder as confirmed, triggering stock deduction via signal."""
         order = self.get_object()
@@ -77,7 +80,7 @@ class SalesOrderViewSet(viewsets.ModelViewSet):
         order.save()
         return Response({'detail': 'Order confirmed. Stock has been deducted.'}, status=status.HTTP_200_OK)
 
-    @action(detail=True, methods=['post'])
+    @action(detail=True, methods=['post'], permission_classes=[IsManager])
     def cancel(self, request, pk=None):
         """Cancel a SalesOrder, triggering stock reversion via signal if it was confirmed."""
         order = self.get_object()

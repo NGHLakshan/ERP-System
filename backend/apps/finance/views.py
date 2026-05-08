@@ -2,6 +2,7 @@ from rest_framework import viewsets, status
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
+from apps.users.permissions import IsManager
 from django.db.models import Sum, Q
 from django.db.models.functions import TruncDate, TruncMonth
 import datetime
@@ -16,7 +17,7 @@ class TransactionViewSet(viewsets.ReadOnlyModelViewSet):
     Supports filtering by: type, date_from, date_to
     """
     serializer_class = TransactionSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsManager]
 
     def get_queryset(self):
         queryset = Transaction.objects.all()
@@ -38,7 +39,7 @@ class TransactionViewSet(viewsets.ReadOnlyModelViewSet):
 
 
 @api_view(['GET'])
-@permission_classes([IsAuthenticated])
+@permission_classes([IsManager])
 def finance_summary(request):
     """
     Returns total income, total expense, and net profit.
@@ -65,7 +66,7 @@ def finance_summary(request):
 
 
 @api_view(['GET'])
-@permission_classes([IsAuthenticated])
+@permission_classes([IsManager])
 def daily_report(request):
     """
     Returns daily income/expense breakdown.
@@ -116,7 +117,7 @@ def daily_report(request):
 
 
 @api_view(['GET'])
-@permission_classes([IsAuthenticated])
+@permission_classes([IsManager])
 def monthly_report(request):
     """
     Returns monthly income/expense breakdown.

@@ -4,10 +4,12 @@ from .models import AuditLog
 from .serializers import AuditLogSerializer
 from apps.inventory.models import Product
 from apps.sales.models import Customer, SalesOrder
+from apps.users.permissions import IsAdmin
 
 class AuditLogListView(generics.ListAPIView):
     queryset = AuditLog.objects.all().order_by('-timestamp')
     serializer_class = AuditLogSerializer
+    permission_classes = [IsAdmin]
     filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
     filterset_fields = ['action', 'model_name', 'user']
     search_fields = ['model_name', 'object_id', 'user__username']

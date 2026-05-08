@@ -1,12 +1,16 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import api from '../api/api';
+import { useAuth } from '../context/AuthContext';
 import { Package, Plus, Trash2, Tag, AlertTriangle, Search } from 'lucide-react';
 
 const ProductList = () => {
+    const { user } = useAuth();
     const [products, setProducts] = useState([]);
     const [loading, setLoading]   = useState(true);
     const [search, setSearch]     = useState('');
+    
+    const isManager = user?.role === 'admin' || user?.role === 'manager';
 
     useEffect(() => { fetchProducts(); }, []);
 
@@ -42,7 +46,9 @@ const ProductList = () => {
                     <p className="page-subtitle">{products.length} products in inventory</p>
                 </div>
                 <div className="header-actions">
-                    <Link to="/add" className="btn btn-primary"><Plus size={16} /> Add Product</Link>
+                    {isManager && (
+                        <Link to="/add" className="btn btn-primary"><Plus size={16} /> Add Product</Link>
+                    )}
                 </div>
             </div>
 
@@ -63,9 +69,11 @@ const ProductList = () => {
                 <div className="card" style={{ textAlign: 'center', padding: '3rem', color: 'var(--text-muted)' }}>
                     <Package size={40} style={{ margin: '0 auto 1rem', opacity: 0.3 }} />
                     <p>{search ? `No products matching "${search}"` : 'No products yet.'}</p>
-                    <Link to="/add" className="btn btn-primary" style={{ marginTop: '1rem', display: 'inline-flex' }}>
-                        <Plus size={16} /> Add First Product
-                    </Link>
+                    {isManager && (
+                        <Link to="/add" className="btn btn-primary" style={{ marginTop: '1rem', display: 'inline-flex' }}>
+                            <Plus size={16} /> Add First Product
+                        </Link>
+                    )}
                 </div>
             ) : (
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(270px,1fr))', gap: '1.25rem' }}>
@@ -111,15 +119,17 @@ const ProductList = () => {
                             </div>
 
                             {/* Action */}
-                            <div style={{ marginTop: 'auto' }}>
-                                <button
-                                    onClick={() => handleDelete(product.id)}
-                                    className="btn btn-danger"
-                                    style={{ width: '100%', justifyContent: 'center' }}
-                                >
-                                    <Trash2 size={14} /> Delete
-                                </button>
-                            </div>
+                            {isManager && (
+                                <div style={{ marginTop: 'auto' }}>
+                                    <button
+                                        onClick={() => handleDelete(product.id)}
+                                        className="btn btn-danger"
+                                        style={{ width: '100%', justifyContent: 'center' }}
+                                    >
+                                        <Trash2 size={14} /> Delete
+                                    </button>
+                                </div>
+                            )}
                         </div>
                     ))}
                 </div>

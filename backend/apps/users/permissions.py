@@ -11,3 +11,9 @@ class IsManager(permissions.BasePermission):
 class IsStaff(permissions.BasePermission):
     def has_permission(self, request, view):
         return request.user.is_authenticated and request.user.role in ['admin', 'manager', 'staff']
+
+class IsManagerOrReadOnly(permissions.BasePermission):
+    def has_permission(self, request, view):
+        if request.method in permissions.SAFE_METHODS:
+            return request.user.is_authenticated and request.user.role in ['admin', 'manager', 'staff']
+        return request.user.is_authenticated and request.user.role in ['admin', 'manager']

@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { getSalesOrders, confirmSalesOrder, cancelSalesOrder } from '../api/api';
+import { useAuth } from '../context/AuthContext';
 import { ShoppingCart, FilePlus, Eye, Edit2, CheckCircle, XCircle } from 'lucide-react';
 
 const STATUS_MAP = {
@@ -11,8 +12,11 @@ const STATUS_MAP = {
 
 const SalesOrderList = () => {
     const navigate = useNavigate();
+    const { user } = useAuth();
     const [orders,  setOrders]  = useState([]);
     const [loading, setLoading] = useState(true);
+
+    const isManager = user?.role === 'admin' || user?.role === 'manager';
 
     useEffect(() => { fetchOrders(); }, []);
 
@@ -129,13 +133,13 @@ const SalesOrderList = () => {
                                                             <Edit2 size={14} />
                                                         </button>
                                                     )}
-                                                    {order.status === 'draft' && (
+                                                    {order.status === 'draft' && isManager && (
                                                         <button className="btn btn-success" style={{ padding: '0.3rem 0.65rem', fontSize: '0.78rem' }}
                                                             onClick={() => handleConfirm(order)}>
                                                             <CheckCircle size={14} /> Confirm
                                                         </button>
                                                     )}
-                                                    {order.status !== 'cancelled' && (
+                                                    {order.status !== 'cancelled' && isManager && (
                                                         <button className="btn btn-danger" style={{ padding: '0.3rem 0.65rem', fontSize: '0.78rem' }}
                                                             onClick={() => handleCancel(order)}>
                                                             <XCircle size={14} />
